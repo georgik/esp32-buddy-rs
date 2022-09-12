@@ -2,6 +2,8 @@
 
 Rust Bare Metal implementation of ESP-Buddy based on https://github.com/espressif/esp-mdf/tree/master/examples/development_kit/buddy
 
+![ESP32-Buddy](esp32-buddy-rust-display.jpg)
+
 ## Dev Containers
 This repository offers Dev Containers supports for:
 -  [Gitpod](https://gitpod.io/)
