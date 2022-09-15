@@ -4,6 +4,26 @@ Rust Bare Metal implementation of ESP-Buddy based on https://github.com/espressi
 
 ![ESP32-Buddy](esp32-buddy-rust-display.jpg)
 
+## How to use examples
+
+Run the base application:
+
+```
+cargo run --release
+```
+
+This is mapped by `.cargo/config.toml` to command:
+
+```
+cargo espflash --release --monitor
+```
+
+Run blinky example with NeoPixel LED - WS2812B:
+
+```
+cargo run --release --example blinky
+```
+
 ## Dev Containers
 This repository offers Dev Containers supports for:
 -  [Gitpod](https://gitpod.io/)
