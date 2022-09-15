@@ -14,6 +14,9 @@ ssd1306 = "0.7.1"
 
 xtensa-lx-rt = { version = "0.13.0", features = ["esp32"], optional = true }
 
+# Blinky dependency
+# ws2812-esp32-rmt-driver = "0.4.0"
+
 [features]
 default = ["rt"]
 rt = ["xtensa-lx-rt"]
