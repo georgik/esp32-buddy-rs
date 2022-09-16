@@ -6,7 +6,12 @@ Rust Bare Metal implementation of ESP-Buddy based on https://github.com/espressi
 
 [![Open ESP32 in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/github.com/georgik/esp32-buddy-rs/)
 
-## How to use examples
+## Quick start in Wokwi
+
+Copy the code from examples to `main.rs` and run `./scripts/run-wokwi.sh`.
+Once the build is complete, click the link in terminal to open Wokwi simulator.
+
+## How to use examples locally
 
 Run the base application:
 
