@@ -29,7 +29,7 @@ fi
 export ESP_ARCH=xtensa-esp32-none-elf
 
 # TODO: Update with your Wokwi Project
-export WOKWI_PROJECT_ID=""
+export WOKWI_PROJECT_ID="342964246421701202"
 if [ "${WOKWI_PROJECT_ID}" == "" ]; then
     wokwi-server --chip esp32 target/${ESP_ARCH}/${BUILD_MODE}/esp_buddy_rs
 else
