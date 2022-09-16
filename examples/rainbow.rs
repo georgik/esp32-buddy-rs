@@ -16,6 +16,15 @@
 #![no_std]
 #![no_main]
 
+
+use embedded_graphics::{
+    mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder, MonoTextStyle},
+    pixelcolor::BinaryColor,
+    prelude::*,
+    text::{Baseline, Text},
+};
+use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
+
 use esp32_hal::{
     clock::ClockControl,
     pac,
@@ -26,6 +35,7 @@ use esp32_hal::{
     PulseControl,
     Rtc,
     IO,
+    i2c
 };
 #[allow(unused_imports)]
 use esp_backtrace as _;
@@ -36,6 +46,7 @@ use smart_leds::{
     SmartLedsWrite,
 };
 use xtensa_lx_rt::entry;
+use heapless::String;
 
 #[entry]
 fn main() -> ! {
@@ -60,11 +71,32 @@ fn main() -> ! {
     // -> We need to use the macro `smartLedAdapter!` with the number of addressed
     // LEDs here to initialize the internal LED pulse buffer to the correct
     // size!
-    let mut led = <smartLedAdapter!(1)>::new(pulse.channel0, io.pins.gpio2);
+    let mut led = <smartLedAdapter!(12)>::new(pulse.channel1, io.pins.gpio25);
 
     // Initialize the Delay peripheral, and use it to toggle the LED state in a
     // loop.
     let mut delay = Delay::new(&clocks);
+
+    let sda = io.pins.gpio18;
+    let scl = io.pins.gpio23;
+
+    let i2c = i2c::I2C::new(
+        peripherals.I2C0,
+        sda,
+        scl,
+        100u32.kHz(),
+        &mut system.peripheral_clock_control,
+        &clocks,
+    )
+    .unwrap();
+
+    let interface = I2CDisplayInterface::new(i2c);
+    let mut display = Ssd1306::new(
+        interface,
+        DisplaySize128x32,
+        DisplayRotation::Rotate0,
+    ).into_buffered_graphics_mode();
+    display.init().unwrap();
 
     let mut color = Hsv {
         hue: 0,
@@ -73,23 +105,40 @@ fn main() -> ! {
     };
     let mut data;
 
+    let text_style = MonoTextStyleBuilder::new()
+        .font(&FONT_6X10)
+        .text_color(BinaryColor::On)
+        .build();
+
     loop {
         // Iterate over the rainbow!
         for hue in 0..=255 {
+            display.clear();
+            Text::with_baseline("Rainbow example", Point::zero(), text_style, Baseline::Top)
+              .draw(&mut display)
+              .unwrap();
+
             color.hue = hue;
             // Convert from the HSV color space (where we can easily transition from one
             // color to the other) to the RGB color space that we can then send to the LED
             let rgb_color = hsv2rgb(color);
 
             // Assign new color to all 12 LEDs
-            data = [rgb_color; 1];
+            data = [rgb_color; 12];
 
             // When sending to the LED, we do a gamma correction first (see smart_leds
             // documentation for details) and then limit the brightness to 10 out of 255 so
             // that the output it's not too bright.
             led.write(brightness(gamma(data.iter().cloned()), 10))
                 .unwrap();
-            delay.delay_ms(20u8);
+
+            let hue_string:String<32> = String::from(hue);
+            Text::with_baseline(&hue_string, Point::new(0, 16), text_style, Baseline::Top)
+                .draw(&mut display)
+                .unwrap();
+
+            display.flush().unwrap();
+            delay.delay_ms(50u32);
         }
     }
 }
