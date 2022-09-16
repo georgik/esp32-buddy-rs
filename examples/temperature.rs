@@ -9,10 +9,12 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text},
 };
-use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
-use esp32_hal::{clock::ClockControl, i2c, IO, pac::Peripherals, prelude::*, timer::TimerGroup, Rtc};
+use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
+use esp32_hal::{clock::ClockControl, Delay, i2c, IO, pac::Peripherals, prelude::*, timer::TimerGroup, Rtc};
 use esp_backtrace as _;
 use xtensa_lx_rt::entry;
+use heapless::String;
+
 
 #[entry]
 fn main() -> ! {
@@ -32,6 +34,8 @@ fn main() -> ! {
     wdt0.disable();
     wdt1.disable();
 
+    let mut delay = Delay::new(&clocks);
+
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
 
     let sda = io.pins.gpio18;
@@ -47,7 +51,15 @@ fn main() -> ! {
     )
     .unwrap();
 
-    let interface = I2CDisplayInterface::new(i2c);
+
+    // We need to access two peripherals on I2C
+    // based on example: https://github.com/ferrous-systems/espressif-trainings/blob/main/advanced/i2c-sensor-reading/examples/part_2.rs
+    let bus = shared_bus::BusManagerSimple::new(i2c);
+
+    let proxy_1 =bus.acquire_i2c();
+    let mut proxy_2 =bus.acquire_i2c();
+
+    let interface = I2CDisplayInterface::new( proxy_1);
     let mut display = Ssd1306::new(
         interface,
         DisplaySize128x32,
@@ -60,15 +72,35 @@ fn main() -> ! {
         .text_color(BinaryColor::On)
         .build();
 
-    Text::with_baseline("Temperature example", Point::zero(), text_style, Baseline::Top)
-        .draw(&mut display)
-        .unwrap();
-
-    // Text::with_baseline("Hello Rust!", Point::new(0, 16), text_style, Baseline::Top)
-    //     .draw(&mut display)
-    //     .unwrap();
+    let mut hts221 = hts221::Builder::new().build(&mut proxy_2).unwrap();
 
     display.flush().unwrap();
 
-    loop {}
+    loop {
+        display.clear();
+        Text::with_baseline("Temperature example", Point::zero(), text_style, Baseline::Top)
+            .draw(&mut display)
+            .unwrap();
+
+
+        // Acquire measurement and perform correction - https://crates.io/crates/hts221
+        let rh = hts221.humidity_x2(&mut proxy_2).unwrap() / 2;
+        let deg_c = hts221.temperature_x8(&mut proxy_2).unwrap() / 8;
+
+        // Format String using heapless - https://docs.rs/heapless/latest/heapless/struct.String.html
+        let mut rh_string:String<32> = String::from(rh);
+        rh_string.push_str("%").unwrap();
+        let mut deg_string:String<32> = String::from(deg_c);
+        deg_string.push_str(" C").unwrap();
+
+        Text::with_baseline(&deg_string, Point::new(0, 16), text_style, Baseline::Top)
+            .draw(&mut display)
+            .unwrap();
+        Text::with_baseline(&rh_string, Point::new(60, 16), text_style, Baseline::Top)
+            .draw(&mut display)
+            .unwrap();
+
+        display.flush().unwrap();
+        delay.delay_ms(300u32);
+    }
 }

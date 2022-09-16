@@ -64,7 +64,7 @@ fn main() -> ! {
 
 
     let button_left_pin = io.pins.gpio0.into_pull_up_input();
-    // let button_right_pin = io.pins.gpio4.into_pull_up_input();
+    let button_right_pin = io.pins.gpio4.into_pull_down_input();
 
     loop {
         display.clear();
@@ -78,11 +78,11 @@ fn main() -> ! {
                 .unwrap();
         }
 
-        // if button_right_pin.is_low().unwrap() {
-        //     Text::with_baseline("Right", Point::new(60, 16), text_style, Baseline::Top)
-        //         .draw(&mut display)
-        //         .unwrap();
-        // }
+        if button_right_pin.is_low().unwrap() {
+            Text::with_baseline("Right", Point::new(60, 16), text_style, Baseline::Top)
+                .draw(&mut display)
+                .unwrap();
+        }
 
         display.flush().unwrap();
         delay.delay_ms(300u32);
