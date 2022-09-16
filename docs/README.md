@@ -11,6 +11,8 @@ Rust Bare Metal implementation of ESP-Buddy based on https://github.com/espressi
 Copy the code from examples to `main.rs` and run `./scripts/run-wokwi.sh`.
 Once the build is complete, click the link in terminal to open Wokwi simulator.
 
+Flash the device using web flasher by command `./scripts/flash.sh`
+
 ## How to use examples locally
 
 Run the base application:
