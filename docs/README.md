@@ -24,6 +24,16 @@ Run blinky example with NeoPixel LED - WS2812B:
 cargo run --release --example blinky
 ```
 
+### Available examples
+
+- animation - moving letters
+- blinky - blink LED (WIP)
+- buttons - display state of buttons
+- gpio - display state of GPIOs
+- rainbow - iterate over HUE and display value
+- temperature - display temperature and humidity
+- wifi - connect to WiFi (WIP)
+
 ## Dev Containers
 This repository offers Dev Containers supports for:
 -  [Gitpod](https://gitpod.io/)
