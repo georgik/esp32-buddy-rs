@@ -4,6 +4,8 @@ Rust Bare Metal implementation of ESP-Buddy based on https://github.com/espressi
 
 ![ESP32-Buddy](esp32-buddy-rust-display.jpg)
 
+[![Open ESP32 in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/github.com/georgik/esp32-buddy-rs/)
+
 ## How to use examples
 
 Run the base application:
