@@ -1,3 +1,4 @@
+// Warning! This examples is not working. Blocked by - https://github.com/georgik/esp32-buddy-rs/issues/1
 // Based on https://github.com/esp-rs/esp-hal/blob/main/esp32-hal/examples/hello_rgb.rs
 // ESP-Buddy HW: // Based on: https://github.com/espressif/esp-mdf/tree/master/examples/development_kit/buddy
 

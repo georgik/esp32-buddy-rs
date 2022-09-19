@@ -36,10 +36,10 @@ cargo run --release --example blinky
 ### Available examples
 
 - animation - moving letters
-- blinky - blink LED (WIP)
+- blinky - blink LED - not working - blocked by - https://github.com/georgik/esp32-buddy-rs/issues/1
 - buttons - display state of buttons
 - gpio - display state of GPIOs
-- rainbow - iterate over HUE and display value
+- rainbow - iterate over HUE and display value - not working - blocked by - https://github.com/georgik/esp32-buddy-rs/issues/1
 - temperature - display temperature and humidity
 - wifi - connect to WiFi (WIP)
 

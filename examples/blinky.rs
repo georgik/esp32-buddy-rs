@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+// Warning! This examples is not working. Blocked by - https://github.com/georgik/esp32-buddy-rs/issues/1
 // Based on: https://github.com/espressif/esp-mdf/tree/master/examples/development_kit/buddy
 
 use embedded_graphics::{
