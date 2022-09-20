@@ -97,13 +97,13 @@ fn main() -> ! {
     println!("{:?}", _wifi_interface.get_status());
 
     println!("Start Wifi Scan");
-    // let res: Result<(heapless::Vec<AccessPointInfo, 10>, usize), WifiError> =
-    //     _wifi_interface.scan_n();
-    // if let Ok((res, _count)) = res {
-    //     for ap in res {
-    //         println!("{:?}", ap);
-    //     }
-    // }
+    let res: Result<(heapless::Vec<AccessPointInfo, 10>, usize), WifiError> =
+        _wifi_interface.scan_n();
+    if let Ok((res, _count)) = res {
+        for ap in res {
+            println!("{:?}", ap);
+        }
+    }
 
     println!("Call wifi_connect");
     let client_config = Configuration::Client(ClientConfiguration {
