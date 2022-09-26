@@ -16,7 +16,7 @@ use esp_wifi::wifi_interface::{timestamp, WifiError, Network};
 use esp_wifi::{create_network_stack_storage, network_stack_storage};
 use esp_wifi::{current_millis, initialize};
 use esp32_hal::clock::{ClockControl, CpuClock};
-use esp32_hal::{i2c, IO, pac::Peripherals, prelude::*, timer::TimerGroup, Rtc};
+use esp32_hal::{i2c, IO, pac::Peripherals, prelude::*, timer::TimerGroup, Rtc, Delay};
 use smoltcp::wire::Ipv4Address;
 
 use xtensa_lx_rt::entry;
@@ -55,6 +55,8 @@ fn main() -> ! {
     rtc.rwdt.disable();
 
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+
+    let mut delay = Delay::new(&clocks);
 
     let sda = io.pins.gpio18;
     let scl = io.pins.gpio23;
@@ -124,12 +126,24 @@ fn main() -> ! {
 
     // wait to get connected
     println!("Wait to get connected");
-    display.clear();
-    Text::with_baseline("WiFi example\nConnecting...", Point::zero(), text_style, Baseline::Top)
-        .draw(&mut display)
-        .unwrap();
-    display.flush().unwrap();
+    
     loop {
+        display.clear();
+        Text::with_baseline("WiFi example\nConnecting", Point::zero(), text_style, Baseline::Top)
+            .draw(&mut display)
+            .unwrap();
+        display.flush().unwrap();
+        
+        for x in (60..75).step_by(5) {
+
+            Text::new(".", Point::new(x, 16), text_style)
+                .draw(&mut display)
+                .unwrap();
+    
+            display.flush().unwrap();
+            delay.delay_ms(1000u32);
+        }
+
         if let Status(ClientStatus::Started(_), _) = wifi_interface.get_status() {
             display.clear();
             Text::with_baseline("WiFi example\nConnected.", Point::zero(), text_style, Baseline::Top)
@@ -143,18 +157,30 @@ fn main() -> ! {
 
     // wait for getting an ip address
     println!("Wait to get an ip address");
-    display.clear();
-    Text::with_baseline("WiFi example\nConnected.\nGetting IP address...", Point::zero(), text_style, Baseline::Top)
-        .draw(&mut display)
-        .unwrap();
-    display.flush().unwrap();
+
     loop {
+        display.clear();
+        Text::with_baseline("WiFi example\nConnected.\nGetting IP address", Point::zero(), text_style, Baseline::Top)
+            .draw(&mut display)
+            .unwrap();
+        display.flush().unwrap();
+
         wifi_interface.poll_dhcp().unwrap();
 
         wifi_interface
             .network_interface()
             .poll(timestamp())
             .unwrap();
+
+        for x in (108..123).step_by(5) {
+
+            Text::new(".", Point::new(x, 27), text_style)
+                .draw(&mut display)
+                .unwrap();
+    
+            display.flush().unwrap();
+            delay.delay_ms(1000u32);
+        }
 
         if let Status(
             ClientStatus::Started(ClientConnectionStatus::Connected(ClientIpStatus::Done(config))),
