@@ -1,11 +1,13 @@
 [target.xtensa-esp32-none-elf]
-runner = "espflash --monitor"
+runner = "espflash --speed 921600 --monitor"
 
-[build]
 rustflags = [
   "-C", "link-arg=-nostartfiles",
-  "-C", "link-arg=-Wl,-Tlinkall.x",
+  "-C", "link-arg=-Tlinkall.x",
+  "-C", "link-arg=-Tesp32_rom_functions.x",
 ]
+
+[build]
 target = "xtensa-esp32-none-elf"
 
 [unstable]
