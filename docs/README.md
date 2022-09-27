@@ -27,21 +27,38 @@ This is mapped by `.cargo/config.toml` to command:
 cargo espflash --release --monitor
 ```
 
-Run blinky example with NeoPixel LED - WS2812B:
+Run animation example with:
 
 ```
-cargo run --release --example blinky
+cargo run --release --example animation
 ```
 
 ### Available examples
 
 - animation - moving letters
+```
+cargo espflash --release --example animation
+```
 - blinky - blink LED - not working - blocked by - https://github.com/georgik/esp32-buddy-rs/issues/1
 - buttons - display state of buttons
+```
+cargo espflash --release --example buttons
+```
 - gpio - display state of GPIOs
+```
+cargo espflash --release --example gpio
+```
 - rainbow - iterate over HUE and display value - not working - blocked by - https://github.com/georgik/esp32-buddy-rs/issues/1
 - temperature - display temperature and humidity
-- wifi - connect to WiFi (WIP)
+```
+cargo espflash --release --example temperature
+```
+- wifi - connect to WiFi
+```
+export SSID="replace_by_ssid"
+export PASSWORD="replace_by_password"
+cargo espflash --release --example wifi --features "embedded-svc" --monitor
+```
 
 ## Dev Containers
 This repository offers Dev Containers supports for:

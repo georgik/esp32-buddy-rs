@@ -352,11 +352,11 @@ dependencies = [
 
 [[package]]
 name = "esp-backtrace"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37a75ce7f6493d0330dac12b8261482cd05ddd1957a44e441fd5621ccf9ff55f"
+checksum = "1cc04e4a62fe7905eab18e12715feaded6cb51a5a878a0c067bbe29436bad96a"
 dependencies = [
- "esp-println",
+ "esp-println 0.2.2",
  "xtensa-lx-rt",
 ]
 
@@ -400,9 +400,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dab33baae57ce7c0869c32885ff136f9c8405e0c201d039ccd767c3e7f79502b"
 
 [[package]]
+name = "esp-println"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "adcfe5d532cf2029b11996cab6b4af948f41c24b131c76422115634711549aaa"
+
+[[package]]
 name = "esp-wifi"
 version = "0.1.0"
-source = "git+https://github.com/esp-rs/esp-wifi.git#80932faf5bfbe95ca9b9cb740340978101122837"
+source = "git+https://github.com/esp-rs/esp-wifi.git#911fa25e535b763ad77f11d6b5afa54f582a148f"
 dependencies = [
  "atomic-polyfill 1.0.1",
  "critical-section 1.1.1",
@@ -457,7 +463,7 @@ dependencies = [
  "embedded-svc",
  "esp-alloc",
  "esp-backtrace",
- "esp-println",
+ "esp-println 0.3.1",
  "esp-wifi",
  "esp32-hal",
  "heapless",
@@ -928,9 +934,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.100"
+version = "1.0.101"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52205623b1b0f064a4e71182c3b18ae902267282930c6d5462c91b859668426e"
+checksum = "e90cde112c4b9690b8cbe810cba9ddd8bc1d7472e2cae317b69e9438c1cba7d2"
 dependencies = [
  "proc-macro2",
  "quote",
