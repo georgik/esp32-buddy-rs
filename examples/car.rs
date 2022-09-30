@@ -3,9 +3,8 @@
 #![no_std]
 #![no_main]
 
-
 use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, ascii::FONT_4X6, MonoTextStyleBuilder, MonoTextStyle},
+    mono_font::{ascii::FONT_6X10, ascii::FONT_4X6, MonoTextStyleBuilder},
     pixelcolor::BinaryColor,
     prelude::*,
     text::{Baseline, Text, Alignment},
@@ -22,7 +21,7 @@ use esp32_hal::{
     IO,
     i2c
 };
-#[allow(unused_imports)]
+
 use esp_backtrace as _;
 
 use xtensa_lx_rt::entry;
