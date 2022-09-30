@@ -80,7 +80,7 @@ fn main() -> ! {
 
     loop {
         // Iterate over the rainbow!
-        for position_x in -53..=143 {
+        for position_x in -53..=210 {
             display.clear();
 
             //back + spoiler
