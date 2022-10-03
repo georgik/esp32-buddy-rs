@@ -3,12 +3,11 @@
 #![no_std]
 #![no_main]
 
-
 use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, ascii::FONT_4X6, MonoTextStyleBuilder, MonoTextStyle},
+    mono_font::{ascii::FONT_6X10, ascii::FONT_4X6, MonoTextStyleBuilder},
     pixelcolor::BinaryColor,
     prelude::*,
-    text::{Baseline, Text},
+    text::{Baseline, Text, Alignment},
 };
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
@@ -22,7 +21,7 @@ use esp32_hal::{
     IO,
     i2c
 };
-#[allow(unused_imports)]
+
 use esp_backtrace as _;
 
 use xtensa_lx_rt::entry;
@@ -80,7 +79,7 @@ fn main() -> ! {
 
     loop {
         // Iterate over the rainbow!
-        for position_x in -53..=143 {
+        for position_x in -53..=210 {
             display.clear();
 
             //back + spoiler
@@ -105,16 +104,7 @@ fn main() -> ! {
                 .draw(&mut display)
                 .unwrap();
 
-            Text::with_baseline("=", Point::new(position_x - 12, 20), text_style, Baseline::Top)
-                .draw(&mut display)
-                .unwrap();
-
-            Text::with_baseline("o", Point::new(position_x - 14, 21), espressif_style, Baseline::Top)
-                .draw(&mut display)
-                .unwrap();
-            
-
-            //wheels + label
+            //chassis + label
 
             Text::with_baseline("-", Point::new(position_x - 6, 24), text_style, Baseline::Top)
                 .draw(&mut display)
@@ -181,7 +171,65 @@ fn main() -> ! {
                 .draw(&mut display)
                 .unwrap();
             
+            // trailer
 
+            for i in (-22..-9).step_by(4) {
+                Text::with_baseline("_", Point::new(position_x + i, 15), text_style, Baseline::Top)
+                    .draw(&mut display)
+                    .unwrap();
+            }
+
+            for i in (0..24).step_by(4) {
+                Text::with_baseline("|", Point::new(position_x - 77, i), text_style, Baseline::Top)
+                    .draw(&mut display)
+                    .unwrap();
+            }
+
+            for i in (-75..-25).step_by(4) {
+                Text::with_baseline("-", Point::new(position_x + i, -3), text_style, Baseline::Top)
+                    .draw(&mut display)
+                    .unwrap();
+            }
+
+            Text::with_alignment("car\nanimation\nexample", Point::new(position_x - 50, 8), espressif_style, Alignment::Center)
+                .draw(&mut display)
+                .unwrap();
+            
+            for i in (0..24).step_by(4) {
+                Text::with_baseline("|", Point::new(position_x - 24, i), text_style, Baseline::Top)
+                    .draw(&mut display)
+                    .unwrap();
+            }
+
+            //trailer chassis
+
+            for i in (-75..-70).step_by(2) {
+                Text::with_baseline("_", Point::new(position_x + i, 20), text_style, Baseline::Top)
+                    .draw(&mut display)
+                    .unwrap();
+            }
+            
+            Text::with_baseline("O", Point::new(position_x + -65, 24), text_style, Baseline::Top)
+                .draw(&mut display)
+                .unwrap();
+
+            for i in (-60..-35).step_by(5) {
+                Text::with_baseline("_", Point::new(position_x + i, 20), text_style, Baseline::Top)
+                    .draw(&mut display)
+                    .unwrap();
+            }
+
+            Text::with_baseline("O", Point::new(position_x + -35, 24), text_style, Baseline::Top)
+                .draw(&mut display)
+                .unwrap();
+
+            for i in (-30..-25).step_by(2) {
+                Text::with_baseline("_", Point::new(position_x + i, 20), text_style, Baseline::Top)
+                    .draw(&mut display)
+                    .unwrap();
+            }
+
+            
             display.flush().unwrap();
             delay.delay_ms(25u32);
         }
