@@ -1,0 +1,12 @@
+{
+  "version": "0.2.1",
+  "tasks": [
+    {
+      "taskLabel": "espflash",
+      "appliesTo": "Cargo.toml",
+      "type": "launch",
+	"command": "cargo",
+      "args": [ "espflash", "COM6", "--release" ]
+    }
+  ]
+}
