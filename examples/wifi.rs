@@ -15,8 +15,7 @@ use esp_wifi::wifi::utils::{create_network_interface};
 use esp_wifi::wifi_interface::{timestamp, WifiError, Network};
 use esp_wifi::{create_network_stack_storage, network_stack_storage};
 use esp_wifi::{current_millis, initialize};
-use esp32_hal::clock::{ClockControl, CpuClock};
-use esp32_hal::{i2c, IO, pac::Peripherals, prelude::*, timer::TimerGroup, Rtc, Delay};
+use hal::{i2c, IO, pac::Peripherals, prelude::*, timer::TimerGroup, Rtc, Delay, clock::{ClockControl, CpuClock}};
 use smoltcp::wire::Ipv4Address;
 
 use xtensa_lx_rt::entry;
@@ -41,7 +40,7 @@ const PASSWORD: &str = env!("PASSWORD");
 fn main() -> ! {
     esp_wifi::init_heap();
 
-    let peripherals = Peripherals::take().unwrap();
+    let peripherals = Peripherals::take();
 
     let mut system = peripherals.DPORT.split();
 
@@ -126,20 +125,20 @@ fn main() -> ! {
 
     // wait to get connected
     println!("Wait to get connected");
-    
+
     loop {
         display.clear();
         Text::with_baseline("WiFi example\nConnecting", Point::zero(), text_style, Baseline::Top)
             .draw(&mut display)
             .unwrap();
         display.flush().unwrap();
-        
+
         for x in (60..75).step_by(5) {
 
             Text::new(".", Point::new(x, 16), text_style)
                 .draw(&mut display)
                 .unwrap();
-    
+
             display.flush().unwrap();
             delay.delay_ms(1000u32);
         }
@@ -177,7 +176,7 @@ fn main() -> ! {
             Text::new(".", Point::new(x, 27), text_style)
                 .draw(&mut display)
                 .unwrap();
-    
+
             display.flush().unwrap();
             delay.delay_ms(1000u32);
         }

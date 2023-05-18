@@ -10,7 +10,7 @@ use embedded_graphics::{
     text::{Baseline, Text},
 };
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
-use esp32_hal::{clock::ClockControl, Delay, i2c, IO, pac::Peripherals, prelude::*, timer::TimerGroup, Rtc};
+use hal::{clock::ClockControl, Delay, i2c, IO, peripherals::Peripherals, prelude::*, timer::TimerGroup, Rtc};
 use esp_backtrace as _;
 use xtensa_lx_rt::entry;
 
@@ -22,9 +22,17 @@ fn main() -> ! {
 
     // Disable the RTC and TIMG watchdog timers
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
-    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
+    let timer_group0 = TimerGroup::new(
+        peripherals.TIMG0,
+        &clocks,
+        &mut system.peripheral_clock_control,
+    );
     let mut wdt0 = timer_group0.wdt;
-    let timer_group1 = TimerGroup::new(peripherals.TIMG1, &clocks);
+    let timer_group1 = TimerGroup::new(
+        peripherals.TIMG1,
+        &clocks,
+        &mut system.peripheral_clock_control,
+    );
     let mut wdt1 = timer_group1.wdt;
 
 
