@@ -31,13 +31,15 @@ use hal::{
     peripherals::Peripherals,
     prelude::*,
     timer::TimerGroup,
-    utils::{smartLedAdapter, SmartLedsAdapter},
     Delay,
     PulseControl,
     Rtc,
     IO,
     i2c
 };
+
+use esp_hal_smartled::smartLedAdapter;
+
 #[allow(unused_imports)]
 use esp_backtrace as _;
 use smart_leds::{
@@ -69,14 +71,22 @@ fn main() -> ! {
     rtc.rwdt.disable();
 
     // Configure RMT peripheral globally
-    let pulse = PulseControl::new(peripherals.RMT, &mut system.peripheral_clock_control).unwrap();
+    let pulse = PulseControl::new(
+        peripherals.RMT,
+        &mut system.peripheral_clock_control,
+        ClockSource::APB,
+        0,
+        0,
+        0,
+    )
+    .unwrap();
 
     // We use one of the RMT channels to instantiate a `SmartLedsAdapter` which can
     // be used directly with all `smart_led` implementations
     // -> We need to use the macro `smartLedAdapter!` with the number of addressed
     // LEDs here to initialize the internal LED pulse buffer to the correct
     // size!
-    let mut led = <smartLedAdapter!(12)>::new(pulse.channel1, io.pins.gpio25);
+    let mut led = <smartLedAdapter!(1)>::new(pulse.channel1, io.pins.gpio25);
 
     // Initialize the Delay peripheral, and use it to toggle the LED state in a
     // loop.
