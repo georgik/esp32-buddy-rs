@@ -10,7 +10,7 @@ use embedded_graphics::{
     text::{Baseline, Text},
 };
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
-use esp32_hal::{clock::ClockControl, Delay, i2c, IO, peripherals::Peripherals, prelude::*, timer::TimerGroup, Rtc};
+use hal::{clock::ClockControl, Delay, i2c, IO, peripherals::Peripherals, prelude::*, timer::TimerGroup, Rtc};
 use esp_backtrace as _;
 use xtensa_lx_rt::entry;
 use heapless::String;
