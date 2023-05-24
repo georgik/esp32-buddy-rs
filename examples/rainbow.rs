@@ -26,18 +26,20 @@ use embedded_graphics::{
 };
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
-use esp32_hal::{
+use hal::{
     clock::ClockControl,
-    pac,
+    peripherals::Peripherals,
     prelude::*,
     timer::TimerGroup,
-    utils::{smartLedAdapter, SmartLedsAdapter},
     Delay,
     PulseControl,
     Rtc,
     IO,
     i2c
 };
+
+use esp_hal_smartled::smartLedAdapter;
+
 #[allow(unused_imports)]
 use esp_backtrace as _;
 use smart_leds::{
@@ -51,28 +53,40 @@ use heapless::String;
 
 #[entry]
 fn main() -> ! {
-    let peripherals = pac::Peripherals::take().unwrap();
+    let peripherals = Peripherals::take();
     let mut system = peripherals.DPORT.split();
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
 
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
-    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
-    let mut wdt = timer_group0.wdt;
+    let timer_group0 = TimerGroup::new(
+        peripherals.TIMG0,
+        &clocks,
+        &mut system.peripheral_clock_control,
+    );
+    let mut wdt0 = timer_group0.wdt;
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
 
     // Disable MWDT and RWDT (Watchdog) flash boot protection
-    wdt.disable();
+    wdt0.disable();
     rtc.rwdt.disable();
 
     // Configure RMT peripheral globally
-    let pulse = PulseControl::new(peripherals.RMT, &mut system.peripheral_clock_control).unwrap();
+    let pulse = PulseControl::new(
+        peripherals.RMT,
+        &mut system.peripheral_clock_control,
+        ClockSource::APB,
+        0,
+        0,
+        0,
+    )
+    .unwrap();
 
     // We use one of the RMT channels to instantiate a `SmartLedsAdapter` which can
     // be used directly with all `smart_led` implementations
     // -> We need to use the macro `smartLedAdapter!` with the number of addressed
     // LEDs here to initialize the internal LED pulse buffer to the correct
     // size!
-    let mut led = <smartLedAdapter!(12)>::new(pulse.channel1, io.pins.gpio25);
+    let mut led = <smartLedAdapter!(1)>::new(pulse.channel1, io.pins.gpio25);
 
     // Initialize the Delay peripheral, and use it to toggle the LED state in a
     // loop.

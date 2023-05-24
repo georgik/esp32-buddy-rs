@@ -11,9 +11,9 @@ use embedded_graphics::{
 };
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
-use esp32_hal::{
+use hal::{
     clock::ClockControl,
-    pac,
+    peripherals::Peripherals,
     prelude::*,
     timer::TimerGroup,
     Delay,
@@ -28,17 +28,21 @@ use xtensa_lx_rt::entry;
 
 #[entry]
 fn main() -> ! {
-    let peripherals = pac::Peripherals::take().unwrap();
+    let peripherals = Peripherals::take();
     let mut system = peripherals.DPORT.split();
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
 
     let mut rtc = Rtc::new(peripherals.RTC_CNTL);
-    let timer_group0 = TimerGroup::new(peripherals.TIMG0, &clocks);
-    let mut wdt = timer_group0.wdt;
+    let timer_group0 = TimerGroup::new(
+        peripherals.TIMG0,
+        &clocks,
+        &mut system.peripheral_clock_control,
+    );
+    let mut wdt0 = timer_group0.wdt;
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
 
     // Disable MWDT and RWDT (Watchdog) flash boot protection
-    wdt.disable();
+    wdt0.disable();
     rtc.rwdt.disable();
 
 
@@ -56,8 +60,7 @@ fn main() -> ! {
         100u32.kHz(),
         &mut system.peripheral_clock_control,
         &clocks,
-    )
-    .unwrap();
+    );
 
     let interface = I2CDisplayInterface::new(i2c);
     let mut display = Ssd1306::new(
@@ -87,7 +90,7 @@ fn main() -> ! {
             Text::with_baseline("_", Point::new(position_x - 12, 1), text_style, Baseline::Top)
                 .draw(&mut display)
                 .unwrap();
-            
+
             Text::with_baseline("_", Point::new(position_x - 10, 1), text_style, Baseline::Top)
                 .draw(&mut display)
                 .unwrap();
@@ -138,8 +141,8 @@ fn main() -> ! {
 
             Text::with_baseline("|", Point::new(position_x + 43, 21), text_style, Baseline::Top)
                 .draw(&mut display)
-                .unwrap();  
-                
+                .unwrap();
+
             Text::with_baseline("\\", Point::new(position_x + 41, 14), text_style, Baseline::Top)
                 .draw(&mut display)
                 .unwrap();
@@ -160,7 +163,7 @@ fn main() -> ! {
                 .unwrap();
 
             //driver
-            
+
             Text::with_baseline("(", Point::new(position_x + 13, 4), text_style, Baseline::Top)
                 .draw(&mut display)
                 .unwrap();
@@ -170,7 +173,7 @@ fn main() -> ! {
             Text::with_baseline("|", Point::new(position_x + 15, 10), text_style, Baseline::Top)
                 .draw(&mut display)
                 .unwrap();
-            
+
             // trailer
 
             for i in (-22..-9).step_by(4) {
@@ -194,7 +197,7 @@ fn main() -> ! {
             Text::with_alignment("car\nanimation\nexample", Point::new(position_x - 50, 8), espressif_style, Alignment::Center)
                 .draw(&mut display)
                 .unwrap();
-            
+
             for i in (0..24).step_by(4) {
                 Text::with_baseline("|", Point::new(position_x - 24, i), text_style, Baseline::Top)
                     .draw(&mut display)
@@ -208,7 +211,7 @@ fn main() -> ! {
                     .draw(&mut display)
                     .unwrap();
             }
-            
+
             Text::with_baseline("O", Point::new(position_x + -65, 24), text_style, Baseline::Top)
                 .draw(&mut display)
                 .unwrap();
@@ -229,7 +232,7 @@ fn main() -> ! {
                     .unwrap();
             }
 
-            
+
             display.flush().unwrap();
             delay.delay_ms(25u32);
         }
