@@ -6,12 +6,14 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-embedded-graphics = "0.7"
+embedded-graphics = "0.8.0"
 embedded-hal = "0.2"
 esp-alloc = { version = "0.3.0" }
 hal = { package = "esp32-hal", version = "0.12.0" }
 esp-backtrace = { version = "0.7.0", features = ["esp32", "panic-handler", "print-uart"] }
-ssd1306 = "0.7.1"
+# ssd1306 was not released yet, so we use git version
+ssd1306 = { git = "https://github.com/jamwaffles/ssd1306.git", rev = "7271f39" }
+#ssd1306 = "0.8"
 
 xtensa-lx-rt = { version = "0.15.0", features = ["esp32"], optional = true }
 
