@@ -10,13 +10,21 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text},
 };
+use esp_println::println;
 use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
-use hal::{clock::ClockControl, i2c, IO, peripherals::Peripherals, prelude::*, timer::TimerGroup, Rtc};
+use hal::{clock::ClockControl, i2c, IO, peripherals::Peripherals, prelude::*, timer::TimerGroup, Rtc, Delay, rmt::Rmt};
 use esp_backtrace as _;
-use xtensa_lx_rt::entry;
 
-use ws2812_esp32_rmt_driver::driver::color::LedPixelColorGrbw32;
-use ws2812_esp32_rmt_driver::{LedPixelEsp32Rmt, RGBW8};
+use smart_leds::{
+    brightness,
+    gamma,
+    hsv::{hsv2rgb, Hsv},
+    SmartLedsWrite,
+};
+
+use hal::gpio::wrappers::InvertedOutputPin;
+
+use esp_hal_smartled::{smartLedAdapter, SmartLedsAdapter};
 
 #[entry]
 fn main() -> ! {
@@ -47,8 +55,13 @@ fn main() -> ! {
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
 
     let led_pin = 25;
-    let mut ws2812 = LedPixelEsp32Rmt::<RGBW8, LedPixelColorGrbw32>::new(0, led_pin).unwrap();
-
+    // let mut ws2812 = LedPixelEsp32Rmt::<RGBW8, LedPixelColorGrbw32>::new(0, led_pin).unwrap();
+    let rmt = Rmt::new(
+        peripherals.RMT,
+        80u32.MHz(),
+        &mut system.peripheral_clock_control,
+        &clocks,
+    ).unwrap();
 
     let sda = io.pins.gpio18;
     let scl = io.pins.gpio23;
@@ -61,31 +74,58 @@ fn main() -> ! {
         &mut system.peripheral_clock_control,
         &clocks,
     );
+    let mut delay = Delay::new(&clocks);
+    // let interface = I2CDisplayInterface::new(i2c);
+    // let mut display = Ssd1306::new(
+    //     interface,
+    //     DisplaySize128x32,
+    //     DisplayRotation::Rotate0,
+    // ).into_buffered_graphics_mode();
+    // display.init().unwrap();
 
-    let interface = I2CDisplayInterface::new(i2c);
-    let mut display = Ssd1306::new(
-        interface,
-        DisplaySize128x32,
-        DisplayRotation::Rotate0,
-    ).into_buffered_graphics_mode();
-    display.init().unwrap();
+    // let text_style = MonoTextStyleBuilder::new()
+    //     .font(&FONT_6X10)
+    //     .text_color(BinaryColor::On)
+    //     .build();
 
-    let text_style = MonoTextStyleBuilder::new()
-        .font(&FONT_6X10)
-        .text_color(BinaryColor::On)
-        .build();
+    // Text::with_baseline("Blinky example", Point::zero(), text_style, Baseline::Top)
+    //     .draw(&mut display)
+    //     .unwrap();
 
-    Text::with_baseline("Blinky example", Point::zero(), text_style, Baseline::Top)
-        .draw(&mut display)
-        .unwrap();
-
-    let pixels = std::iter::repeat(RGBW8::from((6, 0, 0, White(0)))).take(25);
-    ws2812.write(pixels).unwrap();
+        let mut color = Hsv {
+            hue: 0,
+            sat: 255,
+            val: 255,
+        };
+        let mut data;
+        let mut led = <smartLedAdapter!(0, 1)>::new(rmt.channel0,  InvertedOutputPin::new(io.pins.gpio25));
+        loop {
+            // Iterate over the rainbow!
+            for hue in 0..=255 {
+                color.hue = hue;
+                // Convert from the HSV color space (where we can easily transition from one
+                // color to the other) to the RGB color space that we can then send to the LED
+                let rgb_color = hsv2rgb(color);
+                println!("RGB: {:?}", rgb_color);
+    
+                // Assign new color to all 12 LEDs
+                data = [rgb_color; 1];
+    
+                // When sending to the LED, we do a gamma correction first (see smart_leds
+                // documentation for details) and then limit the brightness to 10 out of 255 so
+                // that the output it's not too bright.
+                led.write(brightness(gamma(data.iter().cloned()), 10))
+                    .unwrap();
+                delay.delay_ms(20u8);
+            }
+        }
+    // let pixels = std::iter::repeat(RGBW8::from((6, 0, 0, White(0)))).take(25);
+    // ws2812.write(pixels).unwrap();
     // Text::with_baseline("Hello Rust!", Point::new(0, 16), text_style, Baseline::Top)
     //     .draw(&mut display)
     //     .unwrap();
 
-    display.flush().unwrap();
+    // display.flush().unwrap();
 
-    loop {}
+    // loop {}
 }

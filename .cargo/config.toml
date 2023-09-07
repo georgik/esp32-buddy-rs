@@ -2,9 +2,8 @@
 runner = "espflash flash --monitor"
 
 rustflags = [
-  "-C", "link-arg=-nostartfiles",
   "-C", "link-arg=-Tlinkall.x",
-  "-C", "link-arg=-Tesp32_rom_functions.x",
+  "-C", "link-arg=-nostartfiles",
 ]
 
 [build]
