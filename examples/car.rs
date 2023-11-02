@@ -9,7 +9,6 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text, Alignment},
 };
-use embedded_svc::io;
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
 use hal::{
@@ -26,7 +25,7 @@ use esp_backtrace as _;
 #[entry]
 fn main() -> ! {
     let peripherals = Peripherals::take();
-    let mut system = peripherals.SYSTEM.split();
+    let system = peripherals.SYSTEM.split();
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
 
     // Initialize the Delay peripheral, and use it to toggle the LED state in a
