@@ -1,14 +1,13 @@
 #![no_std]
 #![no_main]
 
-use embedded_io::blocking::*;
 use embedded_svc::ipv4::Interface;
 use embedded_svc::wifi::{AccessPointInfo, ClientConfiguration, Configuration, Wifi};
 
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
 use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder, MonoTextStyle},
+    mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder},
     pixelcolor::BinaryColor,
     prelude::*,
     text::{Baseline, Text},
@@ -20,14 +19,12 @@ use esp_println::{print, println};
 use esp_wifi::wifi::utils::create_network_interface;
 use esp_wifi::wifi::{WifiError, WifiMode};
 use esp_wifi::wifi_interface::WifiStack;
-use esp_wifi::{current_millis, initialize};
-use hal::{i2c, Delay, IO};
+use esp_wifi::{current_millis, initialize, EspWifiInitFor};
+use hal::{i2c, IO};
 use hal::clock::{ClockControl, CpuClock};
 use hal::Rng;
-use hal::{peripherals::Peripherals, prelude::*, Rtc, timer::TimerGroup};
+use hal::{peripherals::Peripherals, prelude::*, timer::TimerGroup};
 use smoltcp::iface::SocketStorage;
-use smoltcp::wire::IpAddress;
-use smoltcp::wire::Ipv4Address;
 
 const SSID: &str = env!("SSID");
 const PASSWORD: &str = env!("PASSWORD");
@@ -36,29 +33,17 @@ const PASSWORD: &str = env!("PASSWORD");
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
     let peripherals = Peripherals::take();
-    let mut system = peripherals.DPORT.split();
+    let system = peripherals.SYSTEM.split();
     // let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
     let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock240MHz).freeze();
 
-    // Disable the RTC and TIMG watchdog timers
-    let mut rtc = Rtc::new(peripherals.RTC_CNTL);
-    let timer_group0 = TimerGroup::new(
-        peripherals.TIMG0,
-        &clocks,
-        &mut system.peripheral_clock_control,
-    );
-    let mut wdt0 = timer_group0.wdt;
-    let timer_group1 = TimerGroup::new(
+    let timer = TimerGroup::new(
         peripherals.TIMG1,
-        &clocks,
-        &mut system.peripheral_clock_control,
-    );
-    let mut wdt1 = timer_group1.wdt;
-    wdt0.disable();
-    wdt1.disable();
-    rtc.rwdt.disable();
+        &clocks
+    )
+    .timer0;
 
-    let mut delay = Delay::new(&clocks);
+    let rng = Rng::new(peripherals.RNG);
 
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
     let sda = io.pins.gpio18;
@@ -69,7 +54,6 @@ fn main() -> ! {
         sda,
         scl,
         100u32.kHz(),
-        &mut system.peripheral_clock_control,
         &clocks,
     );
 
@@ -93,19 +77,29 @@ fn main() -> ! {
 
     display.flush().unwrap();
 
-    initialize(
-        timer_group1.timer0,
-        Rng::new(peripherals.RNG),
-        system.radio_clock_control,
+    let radio_clock_control = system.radio_clock_control;
+
+    let init = initialize(
+        EspWifiInitFor::Wifi,
+        timer,
+        rng,
+        radio_clock_control,
         &clocks,
     )
     .unwrap();
 
-    let (wifi, _) = peripherals.RADIO.split();
-    let mut socket_set_entries: [SocketStorage; 3] = Default::default();
+    let wifi = peripherals.WIFI;
+    let mut socket_set_entries: [SocketStorage; 5] = Default::default();
     let (iface, device, mut controller, sockets) =
-        create_network_interface(wifi, WifiMode::Sta, &mut socket_set_entries);
-    let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
+        match create_network_interface(&init, wifi, WifiMode::Sta, &mut socket_set_entries)
+        {
+            Ok(val) => val,
+            Err(_) => {
+                let err_msg = "Network init failed";
+                print!("{}", err_msg);
+                loop {}
+            }
+    };    let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
 
     let client_config = Configuration::Client(ClientConfiguration {
         ssid: SSID.into(),
@@ -180,7 +174,7 @@ fn main() -> ! {
 
     let mut rx_buffer = [0u8; 1536];
     let mut tx_buffer = [0u8; 1536];
-    let mut socket = wifi_stack.get_socket(&mut rx_buffer, &mut tx_buffer);
+    let _socket = wifi_stack.get_socket(&mut rx_buffer, &mut tx_buffer);
 
     loop {
 

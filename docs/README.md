@@ -39,7 +39,11 @@ cargo run --release --example animation
 ```
 cargo espflash --release --example animation
 ```
-- blinky - blink LED - not working - blocked by - https://github.com/georgik/esp32-buddy-rs/issues/1
+- blinky - blink LED - not working - blocked by:
+   - https://github.com/georgik/esp32-buddy-rs/issues/1
+   - https://github.com/esp-rs/esp-hal/issues/855
+   - https://github.com/bjoernQ/esp-hal/pull/1/files
+
 - buttons - display state of buttons
 ```
 cargo espflash --release --example buttons
@@ -48,7 +52,10 @@ cargo espflash --release --example buttons
 ```
 cargo espflash --release --example gpio
 ```
-- rainbow - iterate over HUE and display value - not working - blocked by - https://github.com/georgik/esp32-buddy-rs/issues/1
+- rainbow - iterate over HUE and display value - not working - blocked by:
+   - https://github.com/georgik/esp32-buddy-rs/issues/1
+   - https://github.com/esp-rs/esp-hal/issues/855
+   - https://github.com/bjoernQ/esp-hal/pull/1/files
 - temperature - display temperature and humidity
 ```
 cargo espflash --release --example temperature

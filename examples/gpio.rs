@@ -4,15 +4,14 @@
 // Based on: https://github.com/espressif/esp-mdf/tree/master/examples/development_kit/buddy
 
 use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder, MonoTextStyle},
+    mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder},
     pixelcolor::BinaryColor,
     prelude::*,
     text::{Baseline, Text},
 };
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
-use hal::{clock::ClockControl, Delay, i2c, IO, peripherals::Peripherals, prelude::*, timer::TimerGroup, Rtc};
+use hal::{clock::ClockControl, Delay, i2c, IO, peripherals::Peripherals, prelude::*};
 use esp_backtrace as _;
-use xtensa_lx_rt::entry;
 
 fn gpio_state<D>(target: &mut D, gpio_number:i32, state:bool)
 where
@@ -24,34 +23,14 @@ where
         .text_color(BinaryColor::On)
         .build();
     let text_state = { if state {"1"} else {"0"}};
-    Text::with_baseline(text_state, Point::new(8*(gpio_number % 16), pos_y ), text_style, Baseline::Top).draw(target);
+    let _ = Text::with_baseline(text_state, Point::new(8*(gpio_number % 16), pos_y ), text_style, Baseline::Top).draw(target);
 }
 
 #[entry]
 fn main() -> ! {
     let peripherals = Peripherals::take();
-    let mut system = peripherals.DPORT.split();
+    let system = peripherals.SYSTEM.split();
     let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
-
-    // Disable the RTC and TIMG watchdog timers
-    let mut rtc = Rtc::new(peripherals.RTC_CNTL);
-    let timer_group0 = TimerGroup::new(
-        peripherals.TIMG0,
-        &clocks,
-        &mut system.peripheral_clock_control,
-    );
-    let mut wdt0 = timer_group0.wdt;
-    let timer_group1 = TimerGroup::new(
-        peripherals.TIMG1,
-        &clocks,
-        &mut system.peripheral_clock_control,
-    );
-    let mut wdt1 = timer_group1.wdt;
-
-
-    rtc.rwdt.disable();
-    wdt0.disable();
-    wdt1.disable();
 
     let mut delay = Delay::new(&clocks);
 
@@ -65,7 +44,6 @@ fn main() -> ! {
         sda,
         scl,
         100u32.kHz(),
-        &mut system.peripheral_clock_control,
         &clocks,
     );
 
