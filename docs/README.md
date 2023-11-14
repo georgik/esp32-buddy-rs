@@ -37,7 +37,7 @@ cargo run --release --example animation
 
 - animation - moving letters
 ```
-cargo espflash --release --example animation
+cargo run --release --example animation
 ```
 - blinky - blink LED - not working - blocked by:
    - https://github.com/georgik/esp32-buddy-rs/issues/1
@@ -46,19 +46,23 @@ cargo espflash --release --example animation
 
 - buttons - display state of buttons
 ```
-cargo espflash --release --example buttons
+cargo run --release --example buttons
 ```
 - gpio - display state of GPIOs
 ```
-cargo espflash --release --example gpio
+cargo run --release --example gpio
 ```
 - rainbow - iterate over HUE and display value - not working - blocked by:
    - https://github.com/georgik/esp32-buddy-rs/issues/1
    - https://github.com/esp-rs/esp-hal/issues/855
    - https://github.com/bjoernQ/esp-hal/pull/1/files
+- snow - snowflakes falling
+```
+cargo run --release --example snow
+```
 - temperature - display temperature and humidity
 ```
-cargo espflash --release --example temperature
+cargo run --release --example temperature
 ```
 - wifi - connect to WiFi
 ```
@@ -159,11 +163,6 @@ used.
     - From the [Command Palette](https://code.visualstudio.com/docs/getstarted/userinterface#_command-palette) (`Ctrl-Shift-P` or `Cmd-Shift-P`) run the `Tasks: Run Task` command and
     select `Build & Run Wokwi`.
     - From UI: Press `Build & Run Wokwi` on the left side of the Status Bar.
-
-> **Warning**
->
->  The simulation will pause if the browser tab is in the background.This may
-> affect the execution, specially when debuging.
 
 #### Debuging with Wokwi
 
