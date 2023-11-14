@@ -16,7 +16,6 @@ use embedded_graphics::{
 use ssd1306::{mode::BufferedGraphicsMode, prelude::*, I2CDisplayInterface, Ssd1306};
 use hal::{clock::ClockControl, i2c, IO, peripherals::Peripherals, prelude::*, timer::TimerGroup, Rtc};
 use esp_backtrace as _;
-use xtensa_lx_rt::entry;
 
 use ws2812_esp32_rmt_driver::driver::color::LedPixelColorGrbw32;
 use ws2812_esp32_rmt_driver::{LedPixelEsp32Rmt, RGBW8};

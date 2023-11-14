@@ -1,8 +1,8 @@
 #![no_std]
 #![no_main]
 
-use embedded_svc::ipv4::Interface;
 use embedded_svc::wifi::{AccessPointInfo, ClientConfiguration, Configuration, Wifi};
+use embedded_svc::ipv4::Interface;
 
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
@@ -15,12 +15,12 @@ use embedded_graphics::{
 
 use esp_backtrace as _;
 use esp_println::logger::init_logger;
-use esp_println::{print, println};
-use esp_wifi::wifi::utils::create_network_interface;
+use esp_println::println;
+use esp_wifi::wifi::{utils::create_network_interface, WifiStaDevice};
 use esp_wifi::wifi::{WifiError, WifiMode};
 use esp_wifi::wifi_interface::WifiStack;
 use esp_wifi::{current_millis, initialize, EspWifiInitFor};
-use hal::{i2c, IO};
+use hal::{i2c, Delay, IO, prelude::*};
 use hal::clock::{ClockControl, CpuClock};
 use hal::Rng;
 use hal::{peripherals::Peripherals, prelude::*, timer::TimerGroup};
@@ -32,16 +32,14 @@ const PASSWORD: &str = env!("PASSWORD");
 #[entry]
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
+
     let peripherals = Peripherals::take();
     let system = peripherals.SYSTEM.split();
-    // let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
-    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock240MHz).freeze();
 
-    let timer = TimerGroup::new(
-        peripherals.TIMG1,
-        &clocks
-    )
-    .timer0;
+    let clocks = ClockControl::max(system.clock_control).freeze();
+    let mut delay = Delay::new(&clocks);
+
+    let timer = TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
 
     let rng = Rng::new(peripherals.RNG);
 
@@ -77,8 +75,8 @@ fn main() -> ! {
 
     display.flush().unwrap();
 
+    let rng = Rng::new(peripherals.RNG);
     let radio_clock_control = system.radio_clock_control;
-
     let init = initialize(
         EspWifiInitFor::Wifi,
         timer,
@@ -89,17 +87,11 @@ fn main() -> ! {
     .unwrap();
 
     let wifi = peripherals.WIFI;
-    let mut socket_set_entries: [SocketStorage; 5] = Default::default();
+    let mut socket_set_entries: [SocketStorage; 3] = Default::default();
     let (iface, device, mut controller, sockets) =
-        match create_network_interface(&init, wifi, WifiMode::Sta, &mut socket_set_entries)
-        {
-            Ok(val) => val,
-            Err(_) => {
-                let err_msg = "Network init failed";
-                print!("{}", err_msg);
-                loop {}
-            }
-    };    let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
+        create_network_interface(&init, wifi, WifiStaDevice, &mut socket_set_entries).unwrap();
+
+    let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
 
     let client_config = Configuration::Client(ClientConfiguration {
         ssid: SSID.into(),

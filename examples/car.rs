@@ -33,6 +33,7 @@ fn main() -> ! {
     let mut delay = Delay::new(&clocks);
 
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+
     let sda = io.pins.gpio18;
     let scl = io.pins.gpio23;
 

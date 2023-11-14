@@ -34,6 +34,7 @@ fn main() -> ! {
     let mut delay = Delay::new(&clocks);
 
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+
     let sda = io.pins.gpio18;
     let scl = io.pins.gpio23;
 
@@ -62,7 +63,8 @@ fn main() -> ! {
         // Iterate over the rainbow!
         for position_x in -30..=128 {
             display.clear();
-            Text::with_baseline("Animation example", Point::zero(), text_style, Baseline::Top)
+            Text::with_baseline("Maker Faire Brno 2023", Point::zero(), text_style, Baseline::Top)
+            //Text::with_baseline("Animation example", Point::zero(), text_style, Baseline::Top)
               .draw(&mut display)
               .unwrap();
 

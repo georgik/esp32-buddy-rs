@@ -12,8 +12,8 @@ use embedded_graphics::{
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 use hal::{clock::ClockControl, Delay, i2c, IO, peripherals::Peripherals, prelude::*};
 use esp_backtrace as _;
-use heapless::String;
-
+use core::fmt::Write;
+use esp_println::println;
 
 #[entry]
 fn main() -> ! {
@@ -63,29 +63,30 @@ fn main() -> ! {
 
     loop {
         display.clear();
-        Text::with_baseline("Temperature example", Point::zero(), text_style, Baseline::Top)
+        Text::with_baseline("Temperature/Humidity", Point::zero(), text_style, Baseline::Top)
             .draw(&mut display)
             .unwrap();
-
 
         // Acquire measurement and perform correction - https://crates.io/crates/hts221
         let rh = hts221.humidity_x2(&mut proxy_2).unwrap() / 2;
         let deg_c = hts221.temperature_x8(&mut proxy_2).unwrap() / 8;
 
-        // Format String using heapless - https://docs.rs/heapless/latest/heapless/struct.String.html
-        let mut rh_string:String<32> = String::from(rh);
-        rh_string.push_str("%").unwrap();
-        let mut deg_string:String<32> = String::from(deg_c);
-        deg_string.push_str(" C").unwrap();
+        let mut rh_string: heapless::String<32> = heapless::String::new();
+        let mut deg_string: heapless::String<32> = heapless::String::new();
+
+        write!(rh_string, "{}%", rh).unwrap();
+        write!(deg_string, "{} C", deg_c).unwrap();
+
+        println!("{} {}", rh_string, deg_string);
 
         Text::with_baseline(&deg_string, Point::new(0, 16), text_style, Baseline::Top)
             .draw(&mut display)
             .unwrap();
-        Text::with_baseline(&rh_string, Point::new(60, 16), text_style, Baseline::Top)
+        Text::with_baseline(&rh_string, Point::new(72, 16), text_style, Baseline::Top)
             .draw(&mut display)
             .unwrap();
 
         display.flush().unwrap();
-        delay.delay_ms(300u32);
+        delay.delay_ms(5000u32);
     }
 }
