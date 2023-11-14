@@ -2,6 +2,8 @@
 
 Rust Bare Metal implementation of ESP-Buddy based on https://github.com/espressif/esp-mdf/tree/master/examples/development_kit/buddy
 
+[![Wokwi](https://img.shields.io/endpoint?url=https%3A%2F%2Fwokwi.com%2Fbadge%2Fclick-to-simulate.json)](https://wokwi.com/projects/381376751746803713)
+
 ![ESP32-Buddy](esp32-buddy-rust-display.jpg)
 
 [![Open ESP32 in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/github.com/georgik/esp32-buddy-rs/)
@@ -139,10 +141,6 @@ simulating in Wokwi is also added.
 When using a custom Wokwi project, please change the `WOKWI_PROJECT_ID` in
 `run-wokwi.sh`. If no project id is specified, a DevKit for esp32 will be
 used.
-
-> **Warning**
->
->  ESP32-S3 is not available in Wokwi
 
 - Terminal approach:
 
