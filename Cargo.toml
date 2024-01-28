@@ -1,46 +1,25 @@
 [package]
-name = "esp_buddy_rs"
-version = "0.2.0"
-authors = ["Juraj Michálek <juraj.michalek@espressif.com>"]
+name = "esp-clock-nostd"
+version = "0.1.0"
+authors = ["Juraj Michalek <juraj.michalek@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-embedded-graphics = "0.8.0"
-embedded-hal = "0.2"
-esp-hal-common = { version = "0.13.1" }
+esp32-hal = "0.17.0"
+esp-backtrace = { version = "0.10.0", features = ["esp32", "panic-handler", "exception-handler", "print-uart"] }
+esp-println = { version = "0.8.0", features = ["esp32", "log"] }
+log = { version = "0.4.20" }
 esp-alloc = { version = "0.3.0" }
-hal = { package = "esp32-hal", version = "0.16.0" }
-esp-backtrace = { version = "0.9.0", features = ["esp32", "panic-handler", "print-uart"] }
-# ssd1306 was not released yet, so we use git version
-ssd1306 = { git = "https://github.com/jamwaffles/ssd1306.git", rev = "7271f39" }
-#ssd1306 = "0.8"
-
-# Blinky dependency
-# ws2812-esp32-rmt-driver = "0.4.0"
-smart-leds        = "0.3.0"
-esp-hal-smartled = { version = "0.6.0", features = ["esp32"] }
-hts221 = "0.3.0"
-esp-println = { version = "0.7.1", features = [ "esp32", "log" ] }
-esp-wifi = { git = "https://github.com/esp-rs/esp-wifi.git", features = [ "esp32", "wifi", "embedded-svc" ]}
-embedded-svc = { version = "0.26.4", default-features = false, features = []}
-shared-bus = "0.3.1"
-# embedded-svc depends on heapless, we stick to the same version
-heapless = { version = "0.7.16", default-features = false }
-
-# Wifi dependency
-embedded-io = "0.6.1"
+esp-wifi  = { version = "0.2.0", features = ["esp32", "wifi"] }
 smoltcp = { version = "0.10.0", default-features=false, features = ["proto-igmp", "proto-ipv4", "socket-tcp", "socket-icmp", "socket-udp", "medium-ethernet", "proto-dhcpv4", "socket-raw", "socket-dhcpv4"] }
+embedded-svc = { version = "0.26.1", default-features = false, features = [] }
+embedded-io = "0.6.1"
+heapless = { version = "0.7.17", default-features = false }
+embedded-graphics = "0.8.0"
+ssd1306 = { git = "https://github.com/jamwaffles/ssd1306.git", rev = "7271f39" }
+lexical-core = {version = "0.8.5", default-features = false, features = ["write-integers", "write-floats", "parse-integers", "parse-floats"]}
 
-critical-section = "1.1.1"
-atomic-polyfill = "1.0.1"
-log = "0.4.17"
-enumset = { version = "1", default-features = false }
-linked_list_allocator = { version = "0.10.3", default-features = false, features = ["const_mut_refs"] }
-fugit = "0.3.6"
-num-derive = { version = "0.4.1" }
-num-traits = { version = "0.2", default-features = false }
-esp-wifi-sys = { git="https://github.com/esp-rs/esp-wifi.git" }
+[features]
+default = ["esp32-hal/xtal-40mhz"]
 
-bleps = { git = "https://github.com/bjoernQ/bleps", package = "bleps", rev = "48eba32e0a0b258ea8945d67077eb38eaa648101", features = ["macros"] }
-futures-util = { version = "0.3.17", default-features = false }
