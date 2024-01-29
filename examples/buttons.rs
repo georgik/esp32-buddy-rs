@@ -9,9 +9,9 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text},
 };
-use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
-use hal::{clock::ClockControl, Delay, i2c, IO, peripherals::Peripherals, prelude::*};
 use esp_backtrace as _;
+use hal::{clock::ClockControl, i2c, peripherals::Peripherals, prelude::*, Delay, IO};
+use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
 #[entry]
 fn main() -> ! {
@@ -26,27 +26,17 @@ fn main() -> ! {
     let sda = io.pins.gpio18;
     let scl = io.pins.gpio23;
 
-    let i2c = i2c::I2C::new(
-        peripherals.I2C0,
-        sda,
-        scl,
-        100u32.kHz(),
-        &clocks,
-    );
+    let i2c = i2c::I2C::new(peripherals.I2C0, sda, scl, 100u32.kHz(), &clocks);
 
     let interface = I2CDisplayInterface::new(i2c);
-    let mut display = Ssd1306::new(
-        interface,
-        DisplaySize128x32,
-        DisplayRotation::Rotate0,
-    ).into_buffered_graphics_mode();
+    let mut display = Ssd1306::new(interface, DisplaySize128x32, DisplayRotation::Rotate0)
+        .into_buffered_graphics_mode();
     display.init().unwrap();
 
     let text_style = MonoTextStyleBuilder::new()
         .font(&FONT_6X10)
         .text_color(BinaryColor::On)
         .build();
-
 
     let button_left_pin = io.pins.gpio0.into_pull_up_input();
     let button_right_pin = io.pins.gpio4.into_pull_down_input();
