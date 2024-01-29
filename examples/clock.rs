@@ -378,7 +378,7 @@ fn main() -> ! {
             display.flush().unwrap();
 
             println!("Loop...");
-            delay.delay_ms(1000u32);
+            delay.delay_ms(972u32); // use 972ms to get 1s delay, accounting also for rest of the code execution
             timestamp += 1;
         }
     } else {
