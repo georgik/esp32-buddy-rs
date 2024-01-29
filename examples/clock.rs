@@ -24,7 +24,7 @@ use embedded_svc::ipv4::Interface;
 use embedded_svc::wifi::{AccessPointInfo, ClientConfiguration, Configuration, Wifi};
 use esp_wifi::current_millis;
 use esp_wifi::wifi::{utils::create_network_interface, WifiStaDevice};
-use esp_wifi::wifi::{WifiError, WifiMode};
+use esp_wifi::wifi::WifiError;
 use esp_wifi::wifi_interface::WifiStack;
 use lexical_core;
 use smoltcp::iface::SocketStorage;
@@ -315,12 +315,9 @@ fn main() -> ! {
         .unwrap();
     socket.flush().unwrap();
 
-    let wait_end = current_millis() + 20 * 1000;
     let mut timestamp: u64 = 0;
 
-    let wait_end = current_millis() + 20 * 1000;
     println!("Minimum free heap size: {} bytes", ALLOCATOR.free());
-    let mut total_size = 0;
     let mut total_size = 0usize;
 
     loop {
