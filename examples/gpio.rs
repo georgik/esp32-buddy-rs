@@ -9,21 +9,33 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text},
 };
-use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
-use hal::{clock::ClockControl, Delay, i2c, IO, peripherals::Peripherals, prelude::*};
 use esp_backtrace as _;
+use hal::{clock::ClockControl, i2c, peripherals::Peripherals, prelude::*, Delay, IO};
+use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
-fn gpio_state<D>(target: &mut D, gpio_number:i32, state:bool)
+fn gpio_state<D>(target: &mut D, gpio_number: i32, state: bool)
 where
-    D: DrawTarget<Color = BinaryColor>
+    D: DrawTarget<Color = BinaryColor>,
 {
     let pos_y = (gpio_number / 16) * 10 + 10;
     let text_style = MonoTextStyleBuilder::new()
         .font(&FONT_6X10)
         .text_color(BinaryColor::On)
         .build();
-    let text_state = { if state {"1"} else {"0"}};
-    let _ = Text::with_baseline(text_state, Point::new(8*(gpio_number % 16), pos_y ), text_style, Baseline::Top).draw(target);
+    let text_state = {
+        if state {
+            "1"
+        } else {
+            "0"
+        }
+    };
+    let _ = Text::with_baseline(
+        text_state,
+        Point::new(8 * (gpio_number % 16), pos_y),
+        text_style,
+        Baseline::Top,
+    )
+    .draw(target);
 }
 
 #[entry]
@@ -39,27 +51,17 @@ fn main() -> ! {
     let sda = io.pins.gpio18;
     let scl = io.pins.gpio23;
 
-    let i2c = i2c::I2C::new(
-        peripherals.I2C0,
-        sda,
-        scl,
-        100u32.kHz(),
-        &clocks,
-    );
+    let i2c = i2c::I2C::new(peripherals.I2C0, sda, scl, 100u32.kHz(), &clocks);
 
     let interface = I2CDisplayInterface::new(i2c);
-    let mut display = Ssd1306::new(
-        interface,
-        DisplaySize128x32,
-        DisplayRotation::Rotate0,
-    ).into_buffered_graphics_mode();
+    let mut display = Ssd1306::new(interface, DisplaySize128x32, DisplayRotation::Rotate0)
+        .into_buffered_graphics_mode();
     display.init().unwrap();
 
     let text_style = MonoTextStyleBuilder::new()
         .font(&FONT_6X10)
         .text_color(BinaryColor::On)
         .build();
-
 
     let button_0_pin = io.pins.gpio0.into_pull_up_input();
     let button_1_pin = io.pins.gpio1.into_pull_up_input();
@@ -96,7 +98,6 @@ fn main() -> ! {
     // let button_30_pin = io.pins.gpio30.into_pull_up_input(); // Not supported
     // let button_31_pin = io.pins.gpio31.into_pull_up_input(); // Not supported
     let button_32_pin = io.pins.gpio32.into_pull_up_input(); // Not supported
-
 
     loop {
         display.clear();

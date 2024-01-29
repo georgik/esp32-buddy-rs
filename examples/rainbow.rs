@@ -20,7 +20,6 @@
 #![no_std]
 #![no_main]
 
-
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyleBuilder},
     pixelcolor::BinaryColor,
@@ -30,28 +29,20 @@ use embedded_graphics::{
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
 use hal::{
-    clock::ClockControl,
-    peripherals::Peripherals,
-    prelude::*,
-    timer::TimerGroup,
-    Delay,
-    PulseControl,
-    Rtc,
-    IO,
-    i2c
+    clock::ClockControl, i2c, peripherals::Peripherals, prelude::*, timer::TimerGroup, Delay,
+    PulseControl, Rtc, IO,
 };
 
 use esp_hal_smartled::smartLedAdapter;
 
 #[allow(unused_imports)]
 use esp_backtrace as _;
+use heapless::String;
 use smart_leds::{
-    brightness,
-    gamma,
+    brightness, gamma,
     hsv::{hsv2rgb, Hsv},
     SmartLedsWrite,
 };
-use heapless::String;
 
 #[entry]
 fn main() -> ! {
@@ -86,21 +77,11 @@ fn main() -> ! {
     let sda = io.pins.gpio18;
     let scl = io.pins.gpio23;
 
-    let i2c = i2c::I2C::new(
-        peripherals.I2C0,
-        sda,
-        scl,
-        100u32.kHz(),
-        &clocks,
-    )
-    .unwrap();
+    let i2c = i2c::I2C::new(peripherals.I2C0, sda, scl, 100u32.kHz(), &clocks).unwrap();
 
     let interface = I2CDisplayInterface::new(i2c);
-    let mut display = Ssd1306::new(
-        interface,
-        DisplaySize128x32,
-        DisplayRotation::Rotate0,
-    ).into_buffered_graphics_mode();
+    let mut display = Ssd1306::new(interface, DisplaySize128x32, DisplayRotation::Rotate0)
+        .into_buffered_graphics_mode();
     display.init().unwrap();
 
     let mut color = Hsv {
@@ -120,8 +101,8 @@ fn main() -> ! {
         for hue in 0..=255 {
             display.clear();
             Text::with_baseline("Rainbow example", Point::zero(), text_style, Baseline::Top)
-              .draw(&mut display)
-              .unwrap();
+                .draw(&mut display)
+                .unwrap();
 
             color.hue = hue;
             // Convert from the HSV color space (where we can easily transition from one
@@ -137,7 +118,7 @@ fn main() -> ! {
             led.write(brightness(gamma(data.iter().cloned()), 10))
                 .unwrap();
 
-            let hue_string:String<32> = String::from(hue);
+            let hue_string: String<32> = String::from(hue);
             Text::with_baseline(&hue_string, Point::new(0, 16), text_style, Baseline::Top)
                 .draw(&mut display)
                 .unwrap();

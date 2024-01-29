@@ -1,12 +1,12 @@
 [package]
-name = "esp-clock-nostd"
-version = "0.1.0"
+name = "esp-buddy-rs"
+version = "0.3.0"
 authors = ["Juraj Michalek <juraj.michalek@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-esp32-hal = "0.17.0"
+hal = { version = "0.17.0", package = "esp32-hal" }
 esp-backtrace = { version = "0.10.0", features = ["esp32", "panic-handler", "exception-handler", "print-uart"] }
 esp-println = { version = "0.8.0", features = ["esp32", "log"] }
 log = { version = "0.4.20" }
@@ -18,8 +18,14 @@ embedded-io = "0.6.1"
 heapless = { version = "0.7.17", default-features = false }
 embedded-graphics = "0.8.0"
 ssd1306 = { git = "https://github.com/jamwaffles/ssd1306.git", rev = "7271f39" }
-lexical-core = {version = "0.8.5", default-features = false, features = ["write-integers", "write-floats", "parse-integers", "parse-floats"]}
+lexical-core = { version = "0.8.5", default-features = false, features = ["write-integers", "write-floats", "parse-integers", "parse-floats"] }
+
+# I2C Temp/Humidity sensor
+shared-bus = { version = "0.3.1" }
+hts221 = { version = "0.3.0" }
 
 [features]
-default = ["esp32-hal/xtal-40mhz"]
+default = ["hal/xtal-40mhz"]
+
+
 
