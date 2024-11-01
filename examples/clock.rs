@@ -2,17 +2,26 @@
 #![no_main]
 
 extern crate alloc;
-use core::mem::MaybeUninit;
+use esp_alloc as _;
 use esp_backtrace as _;
 use esp_println::println;
-use hal::{
-    clock::ClockControl, clock::CpuClock, i2c, peripherals::Peripherals, prelude::*, Delay, IO,
-};
+use hal::{delay::Delay, gpio::Io, i2c, prelude::*};
 
-use esp_wifi::{initialize, EspWifiInitFor};
+use esp_wifi::{
+    init,
+    wifi::{
+        utils::create_network_interface, AccessPointInfo, ClientConfiguration, Configuration,
+        WifiError, WifiStaDevice,
+    },
+    EspWifiInitFor,
+};
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
-use hal::{timer::TimerGroup, Rng};
+use hal::{
+    rng::Rng,
+    time::{self},
+    timer::timg::TimerGroup,
+};
 
 use embedded_graphics::{
     mono_font::{ascii::FONT_10X20, ascii::FONT_6X10, MonoTextStyleBuilder},
@@ -20,32 +29,26 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text},
 };
-use embedded_svc::ipv4::Interface;
-use embedded_svc::wifi::{AccessPointInfo, ClientConfiguration, Configuration, Wifi};
-use esp_wifi::current_millis;
-use esp_wifi::wifi::{utils::create_network_interface, WifiStaDevice};
-use esp_wifi::wifi::WifiError;
 use esp_wifi::wifi_interface::WifiStack;
-use lexical_core;
 use smoltcp::iface::SocketStorage;
 use smoltcp::wire::Ipv4Address;
 
 use embedded_svc::io::{Read, Write};
 
-const SSID: &str = env!("SSID");
-const PASSWORD: &str = env!("PASSWORD");
+const SSID: &str = "SSID"; // env!("SSID");
+const PASSWORD: &str = "PASSWORD"; // env!("PASSWORD");
 
-#[global_allocator]
-static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
+// #[global_allocator]
+// static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 
-fn init_heap() {
-    const HEAP_SIZE: usize = 5 * 1024;
-    static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
+// fn init_heap() {
+//     const HEAP_SIZE: usize = 5 * 1024;
+//     static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
 
-    unsafe {
-        ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE - 1024);
-    }
-}
+//     unsafe {
+//         ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE - 1024);
+//     }
+// }
 
 const NTP_VERSION: u8 = 0b00100011; // NTP version 4, mode 3 (client)
 const NTP_MODE: u8 = 0b00000011;
@@ -53,6 +56,8 @@ const NTP_PACKET_SIZE: usize = 48;
 const NTP_TIMESTAMP_DELTA: u64 = 2_208_988_800; // 70 years in seconds (since 01.01.1900)
 const TIMESTAMP_LEN: usize = 10;
 const UNIXTIME_LEN: usize = 8;
+const RX_BUFFER_SIZE: usize = 16384;
+const TX_BUFFER_SIZE: usize = 16384;
 
 fn is_char_in_str(s: &str, c: char) -> bool {
     for byte in s.as_bytes() {
@@ -152,13 +157,11 @@ fn main() -> ! {
     let mut buffer = [0u8; 4096];
     let mut socket_set_entries: [SocketStorage; 5] = Default::default();
 
-    init_heap();
-    let peripherals = Peripherals::take();
-    let system = peripherals.SYSTEM.split();
+    // init_heap();
+    esp_alloc::heap_allocator!(72 * 1024);
+    let peripherals = hal::init(hal::Config::default());
 
-    // let clocks = ClockControl::max(system.clock_control).freeze();
-    let clocks = ClockControl::configure(system.clock_control, CpuClock::Clock240MHz).freeze();
-    let mut delay = Delay::new(&clocks);
+    let delay = Delay::new();
 
     // setup logger
     // To change the log_level change the env section in .cargo/config.toml
@@ -167,21 +170,26 @@ fn main() -> ! {
     esp_println::logger::init_logger_from_env();
     log::info!("Logger is setup");
     println!("Hello world!");
-    let timer = TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
-    let init = initialize(
+    let timer = TimerGroup::new(peripherals.TIMG0);
+    let init = match init(
         EspWifiInitFor::Wifi,
-        timer,
+        timer.timer0,
         Rng::new(peripherals.RNG),
-        system.radio_clock_control,
-        &clocks,
-    )
-    .unwrap();
-    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+        peripherals.RADIO_CLK,
+    ) {
+        Ok(init) => init,
+        Err(err) => {
+            log::error!("Failed to initialize WiFi: {:?}", err);
+            panic!();
+        }
+    };
+
+    let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
 
     let sda = io.pins.gpio18;
     let scl = io.pins.gpio23;
 
-    let i2c = i2c::I2C::new(peripherals.I2C0, sda, scl, 100u32.kHz(), &clocks);
+    let i2c = i2c::I2c::new(peripherals.I2C0, sda, scl, 100u32.kHz());
 
     let interface = I2CDisplayInterface::new(i2c);
 
@@ -189,13 +197,21 @@ fn main() -> ! {
     let (iface, device, mut controller, sockets) =
         create_network_interface(&init, wifi, WifiStaDevice, &mut socket_set_entries).unwrap();
 
-    let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
+    let now = || time::now().duration_since_epoch().to_millis();
+    let wifi_stack = WifiStack::new(iface, device, sockets, now);
 
     let client_config = Configuration::Client(ClientConfiguration {
         ssid: SSID.try_into().unwrap(),
         password: PASSWORD.try_into().unwrap(),
         ..Default::default()
     });
+
+    let res = controller.set_configuration(&client_config);
+    println!("wifi_set_configuration returned {:?}", res);
+
+    controller.start().unwrap();
+    println!("is wifi started: {:?}", controller.is_started());
+
     let mut display = Ssd1306::new(interface, DisplaySize128x32, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
     display.init().unwrap();
@@ -213,12 +229,6 @@ fn main() -> ! {
         .draw(&mut display)
         .unwrap();
     display.flush().unwrap();
-
-    let res = controller.set_configuration(&client_config);
-    println!("wifi_set_configuration returned {:?}", res);
-
-    controller.start().unwrap();
-    println!("is wifi started: {:?}", controller.is_started());
 
     println!("Start Wifi Scan");
     let res: Result<(heapless::Vec<AccessPointInfo, 10>, usize), WifiError> = controller.scan_n();
@@ -296,65 +306,73 @@ fn main() -> ! {
 
     let mut socket = wifi_stack.get_socket(&mut rx_buffer, &mut tx_buffer);
 
-    println!("Making HTTP request");
-    socket.work();
-    println!("Minimum free heap size: {} bytes", ALLOCATOR.free());
-
-    match socket.open(
-        smoltcp::wire::IpAddress::Ipv4(Ipv4Address::new(213, 188, 196, 246)),
-        80,
-    ) {
-        Ok(_) => println!("Socket opened"),
-        Err(e) => println!("Error opening socket: {:?}", e),
-    }
-
-    socket
-        .write(
-            "GET /api/timezone/Europe/Prague HTTP/1.1\r\nHost: worldtimeapi.org\r\n\r\n".as_bytes(),
-        )
-        .unwrap();
-    socket.flush().unwrap();
-
     let mut timestamp: u64 = 0;
-
-    println!("Minimum free heap size: {} bytes", ALLOCATOR.free());
     let mut total_size = 0usize;
-
     loop {
-        if total_size >= buffer.len() {
-            // Buffer is full
-            println!("Buffer is full, processed {} bytes", total_size);
-            // Here you might want to process the buffer and then clear it
-            // ... (process buffer)
-            total_size = 0; // Reset total_size if you wish to reuse the buffer
-                            // continue; // Optionally continue reading after processing
-            break; // or break if you're done
+        println!("Making HTTP request");
+        socket.work();
+
+        match socket.open(
+            smoltcp::wire::IpAddress::Ipv4(Ipv4Address::new(213, 188, 196, 246)),
+            80,
+        ) {
+            Ok(_) => println!("Socket opened"),
+            Err(e) => println!("Error opening socket: {:?}", e),
         }
 
-        let buffer_slice = &mut buffer[total_size..]; // Slice the buffer from the current total_size to the end
-        match socket.read(buffer_slice) {
-            Ok(0) => {
-                // The connection has been closed by the peer
-                println!("Connection closed, total read size: {}", total_size);
-                break;
+        match socket.write(
+            "GET /api/timezone/Europe/Prague HTTP/1.1\r\nHost: worldtimeapi.org\r\n\r\n".as_bytes(),
+        ) {
+            Ok(_) => println!("Request sent"),
+            Err(e) => println!("Error sending request: {:?}", e),
+        }
+
+        match socket.flush() {
+            Ok(_) => println!("Request flushed"),
+            Err(e) => println!("Error flushing request: {:?}", e),
+        }
+
+        loop {
+            if total_size >= buffer.len() {
+                // Buffer is full
+                println!("Buffer is full, processed {} bytes", total_size);
+                // Here you might want to process the buffer and then clear it
+                // ... (process buffer)
+                total_size = 0; // Reset total_size if you wish to reuse the buffer
+                                // continue; // Optionally continue reading after processing
+                break; // or break if you're done
             }
-            Ok(len) => {
-                println!("Read {} bytes", len);
-                total_size += len;
-                // buffer[..total_size] now contains the data read in this iteration
+            let buffer_slice = &mut buffer[..1280]; // Slice the buffer from the current total_size to the end
+            match socket.read(buffer_slice) {
+                Ok(0) => {
+                    // The connection has been closed by the peer
+                    println!("Connection closed, total read size: {}", total_size);
+                    break;
+                }
+                Ok(len) => {
+                    println!("Read {} bytes", len);
+                    total_size += len;
+                    // buffer[..total_size] now contains the data read in this iteration
+                }
+                Err(e) => {
+                    // Handle the error (e.g., by breaking the loop or retrying)
+                    println!("Failed to read from socket: {:?}", e);
+                    break;
+                }
             }
-            Err(e) => {
-                // Handle the error (e.g., by breaking the loop or retrying)
-                println!("Failed to read from socket: {:?}", e);
-                break;
-            }
+        }
+        if total_size > 0 {
+            break;
+        } else {
+            println!("No data received, retrying ...");
+            delay.delay_millis(100u32);
         }
     }
 
     socket.disconnect();
 
-    let wait_end = current_millis() + 5 * 1000;
-    while current_millis() < wait_end {
+    let wait_end = now() + 20 * 1000;
+    while now() < wait_end {
         socket.work();
     }
     let to_print = unsafe { core::str::from_utf8_unchecked(&buffer[..total_size]) };
@@ -373,8 +391,12 @@ fn main() -> ! {
                 .unwrap();
             display.flush().unwrap();
 
-            println!("Loop...");
-            delay.delay_ms(972u32); // use 972ms to get 1s delay, accounting also for rest of the code execution
+            if timestamp & 1 == 0 {
+                println!("Tick...");
+            } else {
+                println!("Tock...");
+            }
+            delay.delay_millis(972u32); // use 972ms to get 1s delay, accounting also for rest of the code execution
             timestamp += 1;
         }
     } else {
