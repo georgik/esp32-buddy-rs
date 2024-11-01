@@ -10,21 +10,19 @@ use embedded_graphics::{
     text::{Baseline, Text},
 };
 use esp_backtrace as _;
-use hal::{clock::ClockControl, i2c, peripherals::Peripherals, prelude::*, IO};
+use hal::{gpio, i2c, prelude::*};
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
 #[entry]
 fn main() -> ! {
-    let peripherals = Peripherals::take();
-    let system = peripherals.SYSTEM.split();
-    let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
+    let peripherals = hal::init(hal::Config::default());
 
-    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+    let io = gpio::Io::new(peripherals.GPIO, peripherals.IO_MUX);
 
     let sda = io.pins.gpio18;
     let scl = io.pins.gpio23;
 
-    let i2c = i2c::I2C::new(peripherals.I2C0, sda, scl, 100u32.kHz(), &clocks);
+    let i2c = i2c::I2c::new(peripherals.I2C0, sda, scl, 100u32.kHz());
 
     let interface = I2CDisplayInterface::new(i2c);
     let mut display = Ssd1306::new(interface, DisplaySize128x32, DisplayRotation::Rotate0)
