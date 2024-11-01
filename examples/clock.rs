@@ -38,18 +38,6 @@ use embedded_svc::io::{Read, Write};
 const SSID: &str = "SSID"; // env!("SSID");
 const PASSWORD: &str = "PASSWORD"; // env!("PASSWORD");
 
-// #[global_allocator]
-// static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
-
-// fn init_heap() {
-//     const HEAP_SIZE: usize = 5 * 1024;
-//     static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
-
-//     unsafe {
-//         ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE - 1024);
-//     }
-// }
-
 const NTP_VERSION: u8 = 0b00100011; // NTP version 4, mode 3 (client)
 const NTP_MODE: u8 = 0b00000011;
 const NTP_PACKET_SIZE: usize = 48;
@@ -157,7 +145,6 @@ fn main() -> ! {
     let mut buffer = [0u8; 4096];
     let mut socket_set_entries: [SocketStorage; 5] = Default::default();
 
-    // init_heap();
     esp_alloc::heap_allocator!(72 * 1024);
     let peripherals = hal::init(hal::Config::default());
 
@@ -170,7 +157,7 @@ fn main() -> ! {
     esp_println::logger::init_logger_from_env();
     log::info!("Logger is setup");
     println!("Hello world!");
-    let timer = TimerGroup::new(peripherals.TIMG0);
+    let timer = TimerGroup::new(peripherals.TIMG1);
     let init = match init(
         EspWifiInitFor::Wifi,
         timer.timer0,
