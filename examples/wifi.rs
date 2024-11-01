@@ -1,9 +1,6 @@
 #![no_std]
 #![no_main]
 
-use embedded_svc::ipv4::Interface;
-use embedded_svc::wifi::{AccessPointInfo, ClientConfiguration, Configuration, Wifi};
-
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
 use embedded_graphics::{
@@ -16,36 +13,43 @@ use embedded_graphics::{
 use esp_backtrace as _;
 use esp_println::logger::init_logger;
 use esp_println::println;
-use esp_wifi::wifi::{utils::create_network_interface, WifiStaDevice};
-use esp_wifi::wifi::{WifiError, WifiMode};
 use esp_wifi::wifi_interface::WifiStack;
-use esp_wifi::{current_millis, initialize, EspWifiInitFor};
-use hal::clock::{ClockControl, CpuClock};
-use hal::Rng;
-use hal::{i2c, prelude::*, Delay, IO};
-use hal::{peripherals::Peripherals, prelude::*, timer::TimerGroup};
+use esp_wifi::{
+    init,
+    wifi::{
+        utils::create_network_interface, AccessPointInfo, ClientConfiguration, Configuration,
+        WifiError, WifiStaDevice,
+    },
+    EspWifiInitFor,
+};
+use hal::{
+    gpio::Io,
+    i2c,
+    prelude::*,
+    rng::Rng,
+    time::{self},
+    timer::timg::TimerGroup,
+};
 use smoltcp::iface::SocketStorage;
 
-const SSID: &str = env!("SSID");
-const PASSWORD: &str = env!("PASSWORD");
+const SSID: &str = "SSID"; // env!("SSID");
+const PASSWORD: &str = "PASSWORD"; // env!("PASSWORD");
 
 #[entry]
 fn main() -> ! {
     init_logger(log::LevelFilter::Info);
 
-    let peripherals = Peripherals::take();
-    let system = peripherals.SYSTEM.split();
+    esp_alloc::heap_allocator!(72 * 1024);
 
-    let clocks = ClockControl::max(system.clock_control).freeze();
-    let mut delay = Delay::new(&clocks);
+    let peripherals = hal::init(hal::Config::default());
 
-    let timer = TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
+    let timer = TimerGroup::new(peripherals.TIMG1).timer0;
 
-    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+    let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
     let sda = io.pins.gpio18;
     let scl = io.pins.gpio23;
 
-    let i2c = i2c::I2C::new(peripherals.I2C0, sda, scl, 100u32.kHz(), &clocks);
+    let i2c = i2c::I2c::new(peripherals.I2C0, sda, scl, 100u32.kHz());
 
     let interface = I2CDisplayInterface::new(i2c);
     let mut display = Ssd1306::new(interface, DisplaySize128x32, DisplayRotation::Rotate0)
@@ -65,22 +69,18 @@ fn main() -> ! {
     display.flush().unwrap();
 
     let rng = Rng::new(peripherals.RNG);
-    let radio_clock_control = system.radio_clock_control;
-    let init = initialize(
-        EspWifiInitFor::Wifi,
-        timer,
-        rng,
-        radio_clock_control,
-        &clocks,
-    )
-    .unwrap();
+    let init = init(EspWifiInitFor::Wifi, timer, rng, peripherals.RADIO_CLK)
+        .map_err(|e| println!("Failed to initialize wifi {:?}", e))
+        .unwrap();
 
     let wifi = peripherals.WIFI;
-    let mut socket_set_entries: [SocketStorage; 3] = Default::default();
+    let mut socket_set_entries: [SocketStorage; 5] = Default::default();
     let (iface, device, mut controller, sockets) =
         create_network_interface(&init, wifi, WifiStaDevice, &mut socket_set_entries).unwrap();
 
-    let wifi_stack = WifiStack::new(iface, device, sockets, current_millis);
+    let now = || time::now().duration_since_epoch().to_millis();
+
+    let wifi_stack = WifiStack::new(iface, device, sockets, now);
 
     let client_config = Configuration::Client(ClientConfiguration {
         ssid: SSID.try_into().unwrap(),
