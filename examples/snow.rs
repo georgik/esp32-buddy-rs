@@ -7,25 +7,30 @@ use embedded_graphics::{
     prelude::*,
     text::{Baseline, Text},
 };
-use hal::{clock::ClockControl, i2c, peripherals::Peripherals, prelude::*, Delay, Rng, IO};
+use hal::{
+    delay::Delay,
+    gpio::Io,
+    i2c,
+    prelude::*,
+    rng::Rng,
+    time::{self},
+    timer::timg::TimerGroup,
+};
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
 use esp_backtrace as _;
 
 #[entry]
 fn main() -> ! {
-    let peripherals = Peripherals::take();
-    let system = peripherals.SYSTEM.split();
-    let clocks = ClockControl::boot_defaults(system.clock_control).freeze();
+    let peripherals = hal::init(hal::Config::default());
+    let delay = Delay::new();
 
-    let mut delay = Delay::new(&clocks);
-
-    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+    let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
 
     let sda = io.pins.gpio18;
     let scl = io.pins.gpio23;
 
-    let i2c = i2c::I2C::new(peripherals.I2C0, sda, scl, 100u32.kHz(), &clocks);
+    let i2c = i2c::I2c::new(peripherals.I2C0, sda, scl, 100u32.kHz());
 
     let interface = I2CDisplayInterface::new(i2c);
     let mut display = Ssd1306::new(interface, DisplaySize128x32, DisplayRotation::Rotate180)
@@ -79,6 +84,6 @@ fn main() -> ! {
         }
 
         display.flush().unwrap();
-        delay.delay_ms(100u32); // Adjust for snowflake fall speed
+        delay.delay_millis(100u32); // Adjust for snowflake fall speed
     }
 }
